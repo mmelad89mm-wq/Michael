@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>نظام إدارة الدروس التعليمية | لوحة التحكم</title>
+    <!-- Font Awesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- SheetJS (Excel export) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+        body {
+            background: #f0f7ff;
+            color: #1e2a3e;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: auto;
+        }
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header p {
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+        /* Grid & Cards */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 0 0 15px 0;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+        }
+        .card-header {
+            background: #f8fafd;
+            padding: 18px 20px;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 800;
+            font-size: 1.3rem;
+            color: #0f3b5f;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: #2c3e66;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        button {
+            background: #2a5298;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:hover {
+            background: #1e3c72;
+        }
+        .btn-sm {
+            width: auto;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th, td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 6px;
+            text-align: right;
+        }
+        th {
+            background: #eef2ff;
+            color: #1e3a8a;
+        }
+        .badge {
+            background: #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+        }
+        .badge-paid { background: #c6f7d0; color: #166534; }
+        .badge-unpaid { background: #ffe0db; color: #b91c1c; }
+        .flex-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        hr {
+            margin: 15px 0;
+        }
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            .card-header { font-size: 1.1rem; }
+        }
+        .stat-num {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #2a5298;
+        }
+        .whatsapp-btn {
+            background: #25D366;
+        }
+        .whatsapp-btn:hover {
+            background: #128C7E;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-chalkboard-user"></i> برنامج إدارة الدروس التعليمية</h1>
+        <p>إدارة المدرسين | المجموعات | الطلاب | الحضور | الاشتراكات | الدرجات | تواصل ولي الأمر</p>
+    </div>
+
+    <!-- Quick stats row -->
+    <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px;">
+        <div class="card" style="flex:1; text-align:center;"><div class="card-body"><span class="stat-num" id="totalStudentsStat">0</span><br>طلاب</div></div>
+        <div class="card" style="flex:1; text-align:center;"><div class="card-body"><span class="stat-num" id="totalGroupsStat">0</span><br>مجموعات</div></div>
+        <div class="card" style="flex:1; text-align:center;"><div class="card-body"><span class="stat-num" id="unpaidStat">0</span><br>غير مدفوع</div></div>
+    </div>
+
+    <div class="dashboard">
+        <!-- 1. ادارة المدرسين -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-chalkboard"></i> إدارة المدرسين</div>
+            <div class="card-body">
+                <div class="form-group"><label>اسم المدرس</label><input type="text" id="teacherName" placeholder="مثال: أ. أحمد"></div>
+                <button id="addTeacherBtn"><i class="fas fa-plus"></i> إضافة مدرس</button>
+                <hr>
+                <select id="teacherSelect" class="form-group"></select>
+                <button id="deleteTeacherBtn" style="background:#b91c1c;">حذف المدرس المحدد</button>
+            </div>
+        </div>
+
+        <!-- 2. الصفوف والمجموعات -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-layer-group"></i> الصفوف والمجموعات</div>
+            <div class="card-body">
+                <div class="form-group"><label>اسم الصف</label><input type="text" id="className" placeholder="مثال: الصف الخامس"></div>
+                <div class="form-group"><label>اسم المجموعة</label><input type="text" id="groupName" placeholder="مجموعة A"></div>
+                <div class="form-group"><label>موعد المجموعة (اليوم والساعة)</label><input type="text" id="groupSchedule" placeholder="الاثنين 4 م"></div>
+                <button id="addGroupBtn">إضافة مجموعة</button>
+                <hr>
+                <select id="groupSelect"></select>
+                <button id="deleteGroupBtn" style="background:#b91c1c; margin-top:10px;">حذف المجموعة</button>
+            </div>
+        </div>
+
+        <!-- 3. إدارة الطلاب -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-user-graduate"></i> بيانات الطالب</div>
+            <div class="card-body">
+                <div class="form-group"><label>اسم الطالب</label><input type="text" id="studentName"></div>
+                <div class="form-group"><label>رقم ولي الأمر (واتساب)</label><input type="text" id="parentPhone" placeholder="مثال: 9665xxxxxx"></div>
+                <div class="form-group"><label>اختر المجموعة</label><select id="studentGroupSelect"></select></div>
+                <div class="form-group"><label>قيمة الاشتراك الشهري (ريال)</label><input type="number" id="subscriptionAmount" value="150"></div>
+                <button id="addStudentBtn">تسجيل طالب جديد</button>
+                <hr>
+                <select id="studentSelect"></select>
+                <button id="deleteStudentBtn" style="background:#b91c1c;">حذف الطالب</button>
+            </div>
+        </div>
+
+        <!-- 4. الحضور والغياب -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-calendar-check"></i> تسجيل الحضور</div>
+            <div class="card-body">
+                <div class="form-group"><label>اختر الطالب</label><select id="attendanceStudentSelect"></select></div>
+                <div class="form-group"><label>تاريخ الحصة</label><input type="date" id="attendanceDate"></div>
+                <button id="markPresentBtn" style="background:#15803d;">✔ حضور</button>
+                <button id="markAbsentBtn" style="background:#b91c1c;">✘ غياب</button>
+                <button id="viewAttendanceBtn" class="btn-sm" style="background:#475569;">عرض سجل الحضور</button>
+                <div id="attendanceLog" style="margin-top:12px; font-size:0.8rem;"></div>
+            </div>
+        </div>
+
+        <!-- 5. الاشتراكات -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-money-bill-wave"></i> الاشتراكات الشهرية</div>
+            <div class="card-body">
+                <div class="form-group"><label>الطالب</label><select id="subStudentSelect"></select></div>
+                <div class="form-group"><label>الشهر</label><input type="month" id="subMonth"></div>
+                <button id="markPaidBtn" style="background:#2a5298;">تسجيل مدفوع</button>
+                <button id="markUnpaidBtn">تسجيل غير مدفوع</button>
+                <hr>
+                <button id="showUnpaidListBtn">📋 عرض المتأخرين</button>
+                <div id="unpaidList" style="margin-top:10px;"></div>
+            </div>
+        </div>
+
+        <!-- 6. الدرجات والامتحانات -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-star-of-life"></i> إدارة الدرجات</div>
+            <div class="card-body">
+                <div class="form-group"><label>الطالب</label><select id="gradeStudentSelect"></select></div>
+                <div class="form-group"><label>نوع الاختبار</label><input type="text" id="examType" placeholder="شهري / مفاجئ / نهائي"></div>
+                <div class="form-group"><label>الدرجة (من 100)</label><input type="number" id="examScore" step="0.5"></div>
+                <button id="addGradeBtn">إضافة درجة</button>
+                <button id="viewGradesBtn" class="btn-sm">عرض تقرير درجات الطالب</button>
+                <div id="gradesResult" style="margin-top:12px;"></div>
+            </div>
+        </div>
+
+        <!-- 7. التقارير والتواصل -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-chart-simple"></i> التقارير والتواصل</div>
+            <div class="card-body">
+                <button id="reportAttendanceBtn" class="btn-sm"><i class="fas fa-chart-line"></i> تقرير نسبة الحضور</button>
+                <button id="exportExcelBtn" class="btn-sm"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+                <button id="sendWhatsappMsgBtn" class="whatsapp-btn btn-sm"><i class="fab fa-whatsapp"></i> إرسال رسائل مخصصة</button>
+                <div class="form-group" style="margin-top:10px;"><label>نص الرسالة (للتواصل)</label><textarea id="customWhatsMsg" rows="2" placeholder="مرحباً ولي الأمر..."></textarea></div>
+                <button id="sendSpecificAbsentBtn" class="btn-sm">📢 تنبيه للغياب المستمر</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
